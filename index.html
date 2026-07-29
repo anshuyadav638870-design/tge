@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Farmer ID Card & Banking Portal</title>
+  <style>
+    :root {
+      --primary: #2e7d32;
+      --primary-dark: #1b5e20;
+      --secondary: #0288d1;
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
+      --text: #333333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text); padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    h2 { color: var(--primary); margin-bottom: 15px; font-size: 1.4rem; }
+    
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+    input, select, button { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+    
+    button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    button:hover { background: var(--primary-dark); }
+    button.btn-sec { background: var(--secondary); }
+    
+    .flex-gap { display: flex; gap: 10px; }
+    .hidden { display: none !important; }
+    
+    /* Farmer Card Preview Styling */
+    .id-card-container {
+      width: 100%;
+      max-width: 420px;
+      margin: 20px auto;
+      border: 2px solid var(--primary);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .id-header {
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      padding: 10px;
+      font-weight: bold;
+    }
+    .id-body {
+      display: flex;
+      padding: 15px;
+      gap: 15px;
+    }
+    .id-photo {
+      width: 100px;
+      height: 120px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #eee;
+    }
+    .id-details {
+      flex: 1;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+    .id-details p { margin-bottom: 4px; }
+    .id-details strong { color: #111; }
+    
+    .balance-badge {
+      background: #e8f5e9;
+      color: var(--primary-dark);
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- AUTH SECTION -->
+  <div id="authSection" class="card">
+    <h2>Login / Registration</h2>
+    <div class="flex-gap" style="margin-bottom: 15px;">
+      <button onclick="switchTab('login')">User Login</button>
+      <button class="btn-sec" onclick="switchTab('register')">Register User</button>
+      <button style="background: #555;" onclick="switchTab('admin')">Admin Login</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="loginForm">
+      <div class="form-group"><label>Mobile Number</label><input type="text" id="loginMobile" placeholder="10 digit mobile"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="loginPassword"></div>
+      <button onclick="handleUserLogin()">Login</button>
+    </div>
+
+    <!-- Register Form -->
+    <div id="registerForm" class="hidden">
+      <div class="form-group"><label>Full Name</label><input type="text" id="regName"></div>
+      <div class="form-group"><label>Mobile Number</label><input type="text" id="regMobile"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="regPassword"></div>
+      <button onclick="handleUserRegister()">Register</button>
+    </div>
+
+    <!-- Admin Form -->
+    <div id="adminForm" class="hidden">
+      <div class="form-group"><label>Admin User ID</label><input type="text" id="adminId"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="adminPassword"></div>
+      <button style="background: #333;" onclick="handleAdminLogin()">Admin Login</button>
+    </div>
+  </div>
+
+  <!-- USER DASHBOARD SECTION -->
+  <div id="userDashboard" class="card hidden">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 id="welcomeUser">Welcome User</h2>
+      <button style="width: auto; padding: 5px 15px; background: #d32f2f;" onclick="logout()">Logout</button>
+    </div>
+    
+    <div class="balance-badge">
+      Account Balance: ₹<span id="userBalance">0.00</span>
+      <button onclick="refreshBalance()" style="width: auto; padding: 2px 8px; font-size: 0.8rem; margin-left: 10px;">Refresh</button>
+    </div>
+
+    <hr style="margin: 15px 0;">
+
+    <!-- Search Farmer -->
+    <h3>Farmer ID Card Search</h3>
+    <div class="flex-gap" style="margin: 10px 0 20px 0;">
+      <input type="text" id="searchFarmerId" placeholder="Enter Farmer ID">
+      <button onclick="fetchFarmerCard()" style="width: 150px;">Search</button>
+    </div>
+
+    <!-- Farmer Card Preview Area -->
+    <div id="cardPreviewArea" class="hidden">
+      <div class="id-card-container" id="printableCard">
+        <div class="id-header">FARMER IDENTIFICATION CARD</div>
+        <div class="id-body">
+          <img id="cPhoto" class="id-photo" src="" alt="Photo">
+          <div class="id-details">
+            <p><strong>ID:</strong> <span id="cFarmerId"></span></p>
+            <p><strong>Name:</strong> <span id="cName"></span></p>
+            <p><strong>Father:</strong> <span id="cFather"></span></p>
+            <p><strong>DOB:</strong> <span id="cDob"></span></p> <!-- Corrected DOB Format -->
+            <p><strong>Gender:</strong> <span id="cGender"></span></p>
+            <p><strong>Mobile:</strong> <span id="cMobile"></span></p>
+            <p><strong>District:</strong> <span id="cDistrict"></span></p>
+          </div>
+        </div>
+      </div>
+      <button class="btn-sec" onclick="deductAndDownloadCard()">Pay ₹20 & Download Card</button>
+    </div>
+
+    <hr style="margin: 20px 0;">
+
+    <!-- Wallet Deposit Section -->
+    <h3>Add Money to Wallet (Limit ₹10 - ₹200)</h3>
+    <div class="form-group" style="margin-top: 10px;">
+      <label>Amount (₹)</label>
+      <input type="number" id="txAmount" min="10" max="200" placeholder="10 to 200">
+    </div>
+    <div class="form-group">
+      <label>UTR / Transaction Number</label>
+      <input type="text" id="txUtr" placeholder="Enter 12 Digit UTR">
+    </div>
+    <button onclick="submitDeposit()">Submit Top-Up Request</button>
+
+    <hr style="margin: 20px 0;">
+
+    <h3>Transaction History</h3>
+    <div id="historyTableContainer" style="overflow-x: auto;">
+      <p>Loading history...</p>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD SECTION -->
+  <div id="adminDashboard" class="card hidden">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2>Admin Control Panel</h2>
+      <button style="width: auto; padding: 5px 15px; background: #d32f2f;" onclick="logout()">Logout</button>
+    </div>
+    
+    <button onclick="loadAdminData()" style="margin: 15px 0;">Refresh Dashboard Data</button>
+
+    <h3>Pending Wallet Requests</h3>
+    <div id="adminPendingTable" style="overflow-x: auto; margin-bottom: 20px;"></div>
+
+    <h3>Registered Users</h3>
+    <div id="adminUsersTable" style="overflow-x: auto; margin-bottom: 20px;"></div>
+
+    <h3>Farmers Data</h3>
+    <div id="adminFarmersTable" style="overflow-x: auto;"></div>
+  </div>
+
+</div>
+
+<script>
+  // 🔗 APPS SCRIPT WEB APP URL (Apna Web App URL yahan daalein)
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxVt-6eEc68X6lHW5K7z7m7cCRq8CzOKGTEUfw0hl6wr1DyzaxmQp2eexAooVF9dntDMg/exec";
+
+  let currentUser = JSON.parse(localStorage.getItem('user')) || null;
+  let currentAdminToken = localStorage.getItem('adminToken') || null;
+  let currentFetchedFarmer = null;
+
+  window.onload = function() {
+    if(currentUser) {
+      showUserDashboard();
+    } else if(currentAdminToken) {
+      showAdminDashboard();
+    }
+  };
+
+  function switchTab(tab) {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('registerForm').classList.add('hidden');
+    document.getElementById('adminForm').classList.add('hidden');
+    
+    if(tab === 'login') document.getElementById('loginForm').classList.remove('hidden');
+    if(tab === 'register') document.getElementById('registerForm').classList.remove('hidden');
+    if(tab === 'admin') document.getElementById('adminForm').classList.remove('hidden');
+  }
+
+  // API Call Wrapper
+  async function apiCall(payload) {
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      return await response.json();
+    } catch(err) {
+      alert("Network Error: " + err.toString());
+      return { success: false };
+    }
+  }
+
+  // 📅 Frontend Helper: Universal DOB Formatter
+  function cleanDobFormat(rawDob) {
+    if(!rawDob || rawDob === "N/A") return "N/A";
+    let str = rawDob.toString().trim();
+    if(str.includes('T') || str.includes('-')) {
+      let d = new Date(str);
+      if(!isNaN(d.getTime())) {
+        let day = String(d.getDate()).padStart(2, '0');
+        let month = String(d.getMonth() + 1).padStart(2, '0');
+        let year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      }
+    }
+    return str;
+  }
+
+  // User Actions
+  async function handleUserRegister() {
+    const name = document.getElementById('regName').value;
+    const mobile = document.getElementById('regMobile').value;
+    const password = document.getElementById('regPassword').value;
+
+    if(!name || !mobile || !password) return alert("Poori jankari bharein!");
+
+    const res = await apiCall({ action: 'registerUser', data: { name, mobile, password } });
+    alert(res.message);
+    if(res.success) switchTab('login');
+  }
+
+  async function handleUserLogin() {
+    const mobile = document.getElementById('loginMobile').value;
+    const password = document.getElementById('loginPassword').value;
+
+    const res = await apiCall({ action: 'loginUser', data: { mobile, password } });
+    if(res.success) {
+      currentUser = res.user;
+      localStorage.setItem('user', JSON.stringify(currentUser));
+      showUserDashboard();
+    } else {
+      alert(res.message);
+    }
+  }
+
+  function showUserDashboard() {
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('userDashboard').classList.remove('hidden');
+    document.getElementById('welcomeUser').innerText = "Welcome, " + currentUser.name;
+    document.getElementById('userBalance').innerText = currentUser.balance;
+    loadUserHistory();
+  }
+
+  async function refreshBalance() {
+    const res = await apiCall({
+      action: 'refreshBalance',
+      data: { mobile: currentUser.mobile, userToken: currentUser.userToken }
+    });
+    if(res.success) {
+      currentUser.balance = res.balance;
+      localStorage.setItem('user', JSON.stringify(currentUser));
+      document.getElementById('userBalance').innerText = res.balance;
+    }
+  }
+
+  async function fetchFarmerCard() {
+    const farmerId = document.getElementById('searchFarmerId').value.trim();
+    if(!farmerId) return alert("Farmer ID darj karein!");
+
+    const res = await apiCall({
+      action: 'fetchFarmerData',
+      data: { accNo: currentUser.accNo, userToken: currentUser.userToken, farmerId: farmerId }
+    });
+
+    if(res.success) {
+      currentFetchedFarmer = res.farmer;
+      document.getElementById('cFarmerId').innerText = res.farmer.farmerId;
+      document.getElementById('cName').innerText = res.farmer.name;
+      document.getElementById('cFather').innerText = res.farmer.fatherName;
+      document.getElementById('cDob').innerText = cleanDobFormat(res.farmer.dob); // Cleaned Date
+      document.getElementById('cGender').innerText = res.farmer.gender;
+      document.getElementById('cMobile').innerText = res.farmer.mobile;
+      document.getElementById('cDistrict').innerText = res.farmer.district;
+      
+      const photoImg = document.getElementById('cPhoto');
+      photoImg.src = res.farmer.photoBase64 ? res.farmer.photoBase64 : 'https://via.placeholder.com/100x120?text=No+Photo';
+
+      document.getElementById('cardPreviewArea').classList.remove('hidden');
+    } else {
+      alert(res.message);
+      document.getElementById('cardPreviewArea').classList.add('hidden');
+    }
+  }
+
+  async function deductAndDownloadCard() {
+    if(!currentFetchedFarmer) return;
+    if(confirm("Farmer Card print/download karne ke liye ₹20 katenge. Kya aap aage badhna chahte hain?")) {
+      const res = await apiCall({
+        action: 'deductAndDownload',
+        data: {
+          mobile: currentUser.mobile,
+          accNo: currentUser.accNo,
+          userToken: currentUser.userToken,
+          farmerId: currentFetchedFarmer.farmerId
+        }
+      });
+
+      if(res.success) {
+        alert("Payment Successful! Card download ho raha hai.");
+        refreshBalance();
+        window.print(); // Browser print/download trigger
+      } else {
+        alert(res.message);
+      }
+    }
+  }
+
+  async function submitDeposit() {
+    const amount = document.getElementById('txAmount').value;
+    const utr = document.getElementById('txUtr').value;
+
+    if(!amount || !utr) return alert("Amount aur UTR dono likhein!");
+
+    const res = await apiCall({
+      action: 'submitTransaction',
+      data: {
+        mobile: currentUser.mobile,
+        accNo: currentUser.accNo,
+        userToken: currentUser.userToken,
+        name: currentUser.name,
+        amount: amount,
+        utr: utr,
+        type: 'credit'
+      }
+    });
+
+    alert(res.success ? "Request bhej di gayi hai! Admin verify karega." : res.message);
+    if(res.success) {
+      document.getElementById('txAmount').value = '';
+      document.getElementById('txUtr').value = '';
+      loadUserHistory();
+    }
+  }
+
+  async function loadUserHistory() {
+    const res = await apiCall({
+      action: 'getUserHistory',
+      data: { accNo: currentUser.accNo, userToken: currentUser.userToken }
+    });
+
+    if(res.success) {
+      let html = `<table><tr><th>Time</th><th>Txn ID</th><th>UTR</th><th>Amt</th><th>Type</th><th>Status</th></tr>`;
+      res.history.forEach(tx => {
+        html += `<tr>
+          <td>${tx.reqTime}</td>
+          <td>${tx.txId}</td>
+          <td>${tx.utr}</td>
+          <td>₹${tx.amount}</td>
+          <td>${tx.type}</td>
+          <td style="color:${tx.status==='successful'?'green':tx.status==='failed'?'red':'orange'}">${tx.status}</td>
+        </tr>`;
+      });
+      html += `</table>`;
+      document.getElementById('historyTableContainer').innerHTML = html;
+    }
+  }
+
+  // Admin Actions
+  async function handleAdminLogin() {
+    const id = document.getElementById('adminId').value;
+    const password = document.getElementById('adminPassword').value;
+
+    const res = await apiCall({ action: 'loginAdmin', data: { id, password } });
+    if(res.success) {
+      currentAdminToken = res.adminToken;
+      localStorage.setItem('adminToken', currentAdminToken);
+      showAdminDashboard();
+    } else {
+      alert(res.message);
+    }
+  }
+
+  function showAdminDashboard() {
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('adminDashboard').classList.remove('hidden');
+    loadAdminData();
+  }
+
+  async function loadAdminData() {
+    const res = await apiCall({
+      action: 'getAdminDashboardData',
+      data: { adminToken: currentAdminToken }
+    });
+
+    if(res.success) {
+      // Pending Transactions Table
+      let pTable = `<table><tr><th>Acc No</th><th>Name</th><th>Amount</th><th>UTR</th><th>Action</th></tr>`;
+      res.pending.forEach(p => {
+        pTable += `<tr>
+          <td>${p.accNo}</td>
+          <td>${p.name}</td>
+          <td>₹${p.amount}</td>
+          <td>${p.utr}</td>
+          <td>
+            <button onclick="processTx('${p.txId}', 'right', '${p.accNo}', ${p.amount})" style="background:green; padding:3px 8px;">Approve</button>
+            <button onclick="processTx('${p.txId}', 'wrong', '${p.accNo}', ${p.amount})" style="background:red; padding:3px 8px;">Reject</button>
+          </td>
+        </tr>`;
+      });
+      pTable += `</table>`;
+      document.getElementById('adminPendingTable').innerHTML = res.pending.length ? pTable : '<p>Koi pending transaction nahi hai.</p>';
+
+      // Users Table
+      let uTable = `<table><tr><th>Reg Date</th><th>Name</th><th>Mobile</th><th>Acc No</th><th>Balance</th></tr>`;
+      res.users.forEach(u => {
+        uTable += `<tr><td>${u.regTime}</td><td>${u.name}</td><td>${u.mobile}</td><td>${u.accNo}</td><td>₹${u.balance}</td></tr>`;
+      });
+      uTable += `</table>`;
+      document.getElementById('adminUsersTable').innerHTML = uTable;
+
+      // Farmers Table
+      let fTable = `<table><tr><th>Farmer ID</th><th>Name</th><th>Father</th><th>DOB</th><th>Mobile</th><th>District</th></tr>`;
+      res.farmers.forEach(f => {
+        fTable += `<tr><td>${f.farmerId}</td><td>${f.farmerName}</td><td>${f.fatherName}</td><td>${cleanDobFormat(f.dob)}</td><td>${f.mobile}</td><td>${f.district}</td></tr>`;
+      });
+      fTable += `</table>`;
+      document.getElementById('adminFarmersTable').innerHTML = fTable;
+    }
+  }
+
+  async function processTx(txId, action, accNo, amount) {
+    const remark = prompt("Remark darj karein:", action === 'right' ? 'Approved' : 'Rejected');
+    if(remark === null) return;
+
+    const res = await apiCall({
+      action: 'processTransaction',
+      data: { adminToken: currentAdminToken, txId, action, remark, accNo, amount }
+    });
+
+    alert(res.message);
+    loadAdminData();
+  }
+
+  function logout() {
+    localStorage.clear();
+    location.reload();
+  }
+</script>
+</body>
+</html>
