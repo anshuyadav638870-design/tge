@@ -1,498 +1,789 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Farmer ID Card & Banking Portal</title>
+  <title>js100tools Print Portal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  
+  <!-- html2canvas library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
   <style>
-    :root {
-      --primary: #2e7d32;
-      --primary-dark: #1b5e20;
-      --secondary: #0288d1;
-      --bg-color: #f4f6f8;
-      --card-bg: #ffffff;
-      --text: #333333;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text); padding: 20px; }
-    .container { max-width: 900px; margin: 0 auto; }
-    
-    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    h2 { color: var(--primary); margin-bottom: 15px; font-size: 1.4rem; }
-    
-    .form-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
-    input, select, button { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-    
-    button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    button:hover { background: var(--primary-dark); }
-    button.btn-sec { background: var(--secondary); }
-    
-    .flex-gap { display: flex; gap: 10px; }
+    body { background-color: #f8f9fa; padding: 20px; font-family: sans-serif; }
+    .card { max-width: 500px; margin: 20px auto; padding: 20px; box-shadow: 0px 0px 15px rgba(0,0,0,0.1); border-radius: 10px; border: none; }
     .hidden { display: none !important; }
+    .dashboard-header { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    #qrContainer img { max-width: 200px; margin: 15px 0; border: 1px solid #ddd; padding: 5px; border-radius: 5px; }
+    .loading-spinner { display: inline-block; width: 1.2rem; height: 1.2rem; vertical-align: text-bottom; border: .2em solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spinner-border .75s linear infinite; }
+    @keyframes spinner-border { to { transform: rotate(360deg); } }
+    .admin-nav .nav-link { cursor: pointer; font-weight: bold; }
+    .admin-nav .nav-link.active { background-color: #212529 !important; color: #fff !important; }
     
-    /* Farmer Card Preview Styling */
-    .id-card-container {
-      width: 100%;
-      max-width: 420px;
-      margin: 20px auto;
-      border: 2px solid var(--primary);
-      border-radius: 10px;
-      overflow: hidden;
-      background: #fff;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-    .id-header {
-      background: var(--primary);
-      color: white;
-      text-align: center;
-      padding: 10px;
-      font-weight: bold;
-    }
-    .id-body {
-      display: flex;
-      padding: 15px;
-      gap: 15px;
-    }
-    .id-photo {
-      width: 100px;
-      height: 120px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      object-fit: cover;
-      background: #eee;
-    }
-    .id-details {
-      flex: 1;
-      font-size: 0.85rem;
-      line-height: 1.4;
-    }
-    .id-details p { margin-bottom: 4px; }
-    .id-details strong { color: #111; }
-    
-    .balance-badge {
-      background: #e8f5e9;
-      color: var(--primary-dark);
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 1.1rem;
-      display: inline-block;
-      margin-bottom: 15px;
-    }
+    .g-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+    .g-modal-content { background: white; padding: 25px; border-radius: 12px; width: 95%; max-width: 1050px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+    .g-close-btn { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; font-weight: bold; border: none; background: none; }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
+    .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .history-table th { background-color: #f1f3f5 !important; color: #333; font-weight: 700; text-align: center; vertical-align: middle; padding: 10px 8px; white-space: nowrap; border: 1px solid #dee2e6; }
+    .history-table td { vertical-align: middle; padding: 8px 10px; border: 1px solid #dee2e6; font-size: 13px; }
+    .history-table td.nowrap { white-space: nowrap; }
+
+    .btn-refresh-icon { border: none; background: transparent; color: #198754; font-size: 1.1rem; padding: 0 4px; cursor: pointer; transition: transform 0.3s; }
+    .btn-refresh-icon:hover { transform: rotate(180deg); color: #0f5132; }
+
+    /* CARD LAYOUT SYSTEM */
+    .card-print-container { width: 530px; background: #fff; padding: 15px; display: flex; flex-direction: column; gap: 20px; }
+    .agri-card-side { width: 500px; height: 320px; position: relative; background-size: 100% 100%; background-repeat: no-repeat; box-sizing: border-box; overflow: hidden; border: 1px solid #ccc; border-radius: 12px; }
+    
+    .c-photo { position: absolute; left: 26px; top: 80px; width: 112px; height: 138px; object-fit: cover; border: 1.5px solid #000; background: #fff; }
+    .c-details { position: absolute; left: 148px; top: 82px; font-size: 15px; font-weight: bold; line-height: 1.6; color: #000; }
+    .c-mobail { position: absolute; left: 20px; bottom: 30px; font-size: 15px; font-weight: bold; color: #000; }
+    .c-farmer-id { position: absolute; right: 45px; bottom: 18px; font-size: 16px; font-weight: bold; color: #000; letter-spacing: 0.5px; }
+
+    .c-address { position: absolute; left: 20px; top: 18px; width: 450px; max-height: 42px; font-size: 11px; font-weight: bold; color: #000; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+    .c-land-box { position: absolute; left: 20px; top: 80px; width: 460px; max-height: 175px; overflow: hidden; }
+    .c-land-table { width: 100%; border-collapse: collapse; border: 1px solid #000; font-size: 11px; font-weight: bold; color: #000; background-color: transparent; }
+    .c-land-table th, .c-land-table td { border: 1px solid #000; padding: 3px 2px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .c-land-table th { background-color: rgba(255, 255, 255, 0.6); font-weight: bold; }
+    .c-enrollment { position: absolute; left: 0; right: 0; bottom: 10px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: bold; color: #000; text-align: center; width: 100%; }
   </style>
 </head>
 <body>
-
-<div class="container">
-
-  <!-- AUTH SECTION -->
-  <div id="authSection" class="card">
-    <h2>Login / Registration</h2>
-    <div class="flex-gap" style="margin-bottom: 15px;">
-      <button onclick="switchTab('login')">User Login</button>
-      <button class="btn-sec" onclick="switchTab('register')">Register User</button>
-      <button style="background: #555;" onclick="switchTab('admin')">Admin Login</button>
+  <div class="container">
+    <div id="authChoice" class="text-center my-5">
+      <h2 class="mb-4">Welcome to js100tools Print Portal</h2>
+      <button class="btn btn-primary btn-lg m-2 px-4" onclick="showScreen('registerScreen')">User Register</button>
+      <button class="btn btn-secondary btn-lg m-2 px-4" onclick="showScreen('loginScreen')">User Login</button>
+      <button class="btn btn-dark btn-lg m-2 px-4" onclick="showScreen('adminLoginScreen')">Admin Login</button>
     </div>
 
-    <!-- Login Form -->
-    <div id="loginForm">
-      <div class="form-group"><label>Mobile Number</label><input type="text" id="loginMobile" placeholder="10 digit mobile"></div>
-      <div class="form-group"><label>Password</label><input type="password" id="loginPassword"></div>
-      <button onclick="handleUserLogin()">Login</button>
+    <!-- SCREENS -->
+    <div id="registerScreen" class="card hidden">
+      <h3 class="mb-3">User Registration</h3>
+      <form id="regForm" onsubmit="handleRegister(event)">
+        <div class="mb-3"><label class="form-label">Full Name</label><input type="text" id="regName" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">Mobile (10 Digits)</label><input type="text" id="regMobile" pattern="\d{10}" maxlength="10" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">Password</label><input type="password" id="regPass" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">Confirm Password</label><input type="password" id="regConfPass" class="form-control" required></div>
+        <button type="submit" id="btn-register" class="btn btn-success w-100 py-2">Register</button>
+      </form>
+      <button class="btn btn-link w-100 mt-2" onclick="showScreen('authChoice')">Back to Home</button>
     </div>
 
-    <!-- Register Form -->
-    <div id="registerForm" class="hidden">
-      <div class="form-group"><label>Full Name</label><input type="text" id="regName"></div>
-      <div class="form-group"><label>Mobile Number</label><input type="text" id="regMobile"></div>
-      <div class="form-group"><label>Password</label><input type="password" id="regPassword"></div>
-      <button onclick="handleUserRegister()">Register</button>
+    <div id="loginScreen" class="card hidden">
+      <h3 class="mb-3">User Login</h3>
+      <form id="loginForm" onsubmit="handleUserLogin(event)">
+        <div class="mb-3"><label class="form-label">Mobile Number</label><input type="text" id="loginMobile" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">Password</label><input type="password" id="loginPass" class="form-control" required></div>
+        <button type="submit" id="btn-user-login" class="btn btn-primary w-100 py-2">Login</button>
+      </form>
+      <button class="btn btn-link w-100 mt-2" onclick="showScreen('authChoice')">Back to Home</button>
     </div>
 
-    <!-- Admin Form -->
-    <div id="adminForm" class="hidden">
-      <div class="form-group"><label>Admin User ID</label><input type="text" id="adminId"></div>
-      <div class="form-group"><label>Password</label><input type="password" id="adminPassword"></div>
-      <button style="background: #333;" onclick="handleAdminLogin()">Admin Login</button>
-    </div>
-  </div>
-
-  <!-- USER DASHBOARD SECTION -->
-  <div id="userDashboard" class="card hidden">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h2 id="welcomeUser">Welcome User</h2>
-      <button style="width: auto; padding: 5px 15px; background: #d32f2f;" onclick="logout()">Logout</button>
-    </div>
-    
-    <div class="balance-badge">
-      Account Balance: ₹<span id="userBalance">0.00</span>
-      <button onclick="refreshBalance()" style="width: auto; padding: 2px 8px; font-size: 0.8rem; margin-left: 10px;">Refresh</button>
+    <div id="adminLoginScreen" class="card hidden">
+      <h3 class="mb-3">Admin Login</h3>
+      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+        <div class="mb-3"><label class="form-label">Admin ID</label><input type="text" id="adminId" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">Password</label><input type="password" id="adminPass" class="form-control" required></div>
+        <button type="submit" id="btn-admin-login" class="btn btn-dark w-100 py-2">Admin Login</button>
+      </form>
+      <button class="btn btn-link w-100 mt-2" onclick="showScreen('authChoice')">Back to Home</button>
     </div>
 
-    <hr style="margin: 15px 0;">
+    <!-- USER DASHBOARD -->
+    <div id="userDashboard" class="hidden">
+      <div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h5 class="mb-1">Welcome, <span id="dashName" class="text-primary"></span></h5>
+          <small class="text-muted">Mob: <span id="dashMobile"></span> | Acc: <span id="dashAcc" class="fw-bold"></span></small>
+        </div>
+        <div class="text-end">
+          <h5 class="mb-1">
+            Balance: <span class="text-success fw-bold">₹<span id="dashBalance">0</span></span>
+            <button id="btn-user-refresh" class="btn-refresh-icon" onclick="triggerRefresh()" title="Refresh Balance">🔄</button>
+          </h5>
+          <button id="btn-user-history" class="btn btn-sm btn-outline-primary" onclick="openUserHistory()">History 📜</button>
+          <button class="btn btn-sm btn-danger ms-2" onclick="logout()">Logout</button>
+        </div>
+      </div>
 
-    <!-- Search Farmer -->
-    <h3>Farmer ID Card Search</h3>
-    <div class="flex-gap" style="margin: 10px 0 20px 0;">
-      <input type="text" id="searchFarmerId" placeholder="Enter Farmer ID">
-      <button onclick="fetchFarmerCard()" style="width: 150px;">Search</button>
-    </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <div class="card h-100 text-center">
+            <h4 class="mb-3">Download AgriStack Card</h4>
+            <div class="d-grid gap-3">
+              <button class="btn btn-outline-primary py-2 fw-bold" onclick="showGuidelines()">1. Guidelines 📖</button>
+              <button class="btn btn-outline-secondary py-2 fw-bold" onclick="downloadExtension()">2. Download Extension 🧩</button>
+              <button id="btn-open-panel" class="btn btn-success py-2 fw-bold text-white" onclick="openPrintCardPanel()">3. Print / Download Card 📇</button>
+            </div>
+          </div>
+        </div>
 
-    <!-- Farmer Card Preview Area -->
-    <div id="cardPreviewArea" class="hidden">
-      <div class="id-card-container" id="printableCard">
-        <div class="id-header">FARMER IDENTIFICATION CARD</div>
-        <div class="id-body">
-          <img id="cPhoto" class="id-photo" src="" alt="Photo">
-          <div class="id-details">
-            <p><strong>ID:</strong> <span id="cFarmerId"></span></p>
-            <p><strong>Name:</strong> <span id="cName"></span></p>
-            <p><strong>Father:</strong> <span id="cFather"></span></p>
-            <p><strong>DOB:</strong> <span id="cDob"></span></p> <!-- Corrected DOB Format -->
-            <p><strong>Gender:</strong> <span id="cGender"></span></p>
-            <p><strong>Mobile:</strong> <span id="cMobile"></span></p>
-            <p><strong>District:</strong> <span id="cDistrict"></span></p>
+        <div class="col-md-6 mb-3">
+          <div class="card h-100 text-center">
+            <h4 class="mb-3">Add Balance</h4>
+            <div class="d-flex justify-content-center gap-3 mb-3">
+              <button class="btn btn-primary px-4" onclick="openTopUp('top-up')">Standard Top-Up</button>
+              <button class="btn btn-warning px-4 text-white" onclick="openTopUp('emergency-top-up')">Emergency Top-Up</button>
+            </div>
+            <div id="paymentArea" class="hidden border-top pt-3 mt-3">
+              <h5 id="paymentTitle" class="text-secondary mb-3"></h5>
+              <div class="mb-3 mx-auto" style="max-width: 300px;">
+                <input type="number" id="payAmount" class="form-control text-center fs-5" placeholder="Amount (₹10 - ₹200)" min="10" max="200">
+                <button class="btn btn-info btn-sm mt-2 w-100 text-white fw-bold" onclick="generateQR()">Generate QR Code</button>
+              </div>
+              <div id="qrContainer" class="hidden">
+                <div id="qrcode"></div>
+                <p class="text-muted small mb-3">Scan this QR via any UPI App</p>
+                <div class="mb-3 mx-auto" style="max-width: 300px;">
+                  <input type="text" id="payUtr" class="form-control text-center" placeholder="Enter exactly 12-digit UTR" maxlength="12" pattern="\d{12}">
+                  <button id="btn-submit-payment" class="btn btn-success w-100 mt-2 py-2" onclick="submitTx()">Submit Payment</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <button class="btn-sec" onclick="deductAndDownloadCard()">Pay ₹20 & Download Card</button>
+
+      <!-- SEARCH FARMER PANEL -->
+      <div id="printCardPanel" class="card hidden text-center mt-4 mx-auto" style="max-width:600px;">
+        <h4 class="mb-3">Print AgriStack Card</h4>
+        <div class="input-group mb-3">
+          <input type="text" id="searchFarmerId" class="form-control text-center" placeholder="Enter Farmer ID">
+          <button id="btn-search-farmer" class="btn btn-primary" onclick="searchFarmer()">Search</button>
+        </div>
+
+        <div id="farmerPreview" class="hidden border-top pt-3">
+          <div class="d-flex align-items-center justify-content-around mb-3">
+            <img id="prevPhoto" src="" style="width:100px; height:120px; border:1px solid #ddd; object-fit: cover; border-radius:4px;">
+            <div class="text-start">
+              <h6 class="mb-1"><b>Name:</b> <span id="prevName"></span></h6>
+              <h6 class="mb-1"><b>Father Name:</b> <span id="prevFather"></span></h6>
+              <h6 class="mb-1"><b>Mobile No:</b> <span id="prevMobile"></span></h6>
+              <h6 class="mb-1"><b>Farmer ID:</b> <span id="prevId"></span></h6>
+            </div>
+          </div>
+          <button id="btn-download-agri" class="btn btn-success w-100 py-2" onclick="processCardDeduction()">Download Card (Charges ₹20)</button>
+        </div>
+      </div>
     </div>
 
-    <hr style="margin: 20px 0;">
-
-    <!-- Wallet Deposit Section -->
-    <h3>Add Money to Wallet (Limit ₹10 - ₹200)</h3>
-    <div class="form-group" style="margin-top: 10px;">
-      <label>Amount (₹)</label>
-      <input type="number" id="txAmount" min="10" max="200" placeholder="10 to 200">
+    <!-- HISTORY MODAL -->
+    <div id="userHistoryModal" class="g-modal hidden">
+      <div class="g-modal-content">
+        <button class="g-close-btn" onclick="closeUserHistory()">&times;</button>
+        <h4 class="mb-3 fw-bold text-start">My Transactions History</h4>
+        <div class="table-responsive">
+          <table class="history-table table-bordered align-middle">
+            <thead>
+              <tr>
+                <th style="width: 18%;">Req Time /<br>Action Time</th>
+                <th style="width: 18%;">TxID / UTR</th>
+                <th style="width: 16%;">Name / Mobile</th>
+                <th style="width: 14%;">Acc No</th>
+                <th style="width: 12%;">Type</th>
+                <th style="width: 8%;">Amount</th>
+                <th style="width: 8%;">Status</th>
+                <th style="width: 6%;">Remark</th>
+              </tr>
+            </thead>
+            <tbody id="userHistoryTableBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
-    <div class="form-group">
-      <label>UTR / Transaction Number</label>
-      <input type="text" id="txUtr" placeholder="Enter 12 Digit UTR">
-    </div>
-    <button onclick="submitDeposit()">Submit Top-Up Request</button>
 
-    <hr style="margin: 20px 0;">
-
-    <h3>Transaction History</h3>
-    <div id="historyTableContainer" style="overflow-x: auto;">
-      <p>Loading history...</p>
+    <!-- GUIDELINES MODAL -->
+    <div id="guidelinesModal" class="g-modal hidden">
+      <div class="g-modal-content">
+        <button class="g-close-btn" onclick="closeGuidelines()">&times;</button>
+        <h4 class="text-success text-center mb-4 mt-3">AgriStack Card Download Kaise/Kyun Karein?</h4>
+        <ol class="lh-lg text-start">
+          <li>Sabse pehle <b>"Download Extension"</b> button par click karke extension package save karein.</li>
+          <li>Chrome me <code>chrome://extensions</code> open karke <b>Developer Mode</b> ON karein aur extracted folder ko load karein.</li>
+          <li>Government portal par page open hone par floating <b>Fetch Data</b> button se profile access karein aur submit karein.</li>
+          <li>Data portal database me securely lock hone ke baad wapas is screen par aayein.</li>
+          <li><b>Print Card</b> section me Farmer ID search karein. System details auto-check karega aur ₹20 deduction ke bad real-time card download kar dega.</li>
+        </ol>
+        <button class="btn btn-dark w-100 py-2 mt-3" onclick="closeGuidelines()">OK, I Understand</button>
+      </div>
     </div>
+
+    <!-- CARD PRINT RENDER STRUCTURE -->
+    <div id="cardRenderArea" style="position: absolute; left: -9999px; top: -9999px;">
+       <div id="fullCardSheet" class="card-print-container">
+          <div id="cardFrontSide" class="agri-card-side">
+             <img id="cardPhoto" src="" class="c-photo">
+             <div class="c-details">
+                <div>Name: <span id="cardName"></span></div>
+                <div>Father's Name: <span id="cardFather"></span></div>
+                <div>DOB: <span id="cardDob"></span></div>
+                <div>Gender: <span id="cardGender"></span></div>
+             </div>
+             <div class="c-mobail">Mobile: <span id="cardMobile"></span></div>
+             <div class="c-farmer-id">Farmer ID <br><span id="cardFarmerId"></span></div>
+          </div>
+
+          <div id="cardBackSide" class="agri-card-side">
+             <div class="c-address">Add: <span id="cardAddress"></span></div>
+             <div id="cardLandContainer" class="c-land-box"></div>
+             <div class="c-enrollment"><span id="cardEnrollId"></span></div>
+          </div>
+       </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="adminDashboard" class="hidden">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Admin Management Panel</h3>
+        <div>
+          <button id="btn-admin-refresh" class="btn btn-outline-dark me-2" onclick="loadAdminDashboard(this)">Refresh Data 🔄</button>
+          <button class="btn btn-danger" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <ul class="nav nav-pills admin-nav mb-4 bg-light p-2 rounded">
+        <li class="nav-item"><a class="nav-link active" onclick="switchAdminTab('pendingTab', this)">Pending Requests</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="switchAdminTab('allTxTab', this)">All Transactions</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="switchAdminTab('usersTab', this)">Users List</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="switchAdminTab('farmersTab', this)">Farmers Data (Sheet1)</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="switchAdminTab('adminsTab', this)">Administration</a></li>
+      </ul>
+
+      <div id="pendingTab" class="admin-tab-content">
+        <h4>Pending Requests</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped bg-white align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Request Time</th>
+                <th>Name / Mobile</th>
+                <th>Acc No</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>UTR Number</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminPendingTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="allTxTab" class="admin-tab-content hidden">
+        <h4>All Transactions History</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped bg-white align-middle">
+            <thead class="table-secondary">
+              <tr>
+                <th>Req Time / Action Time</th>
+                <th>TxID / UTR</th>
+                <th>Name / Mobile</th>
+                <th>Acc No</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Remark</th>
+              </tr>
+            </thead>
+            <tbody id="adminAllTxTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="usersTab" class="admin-tab-content hidden">
+        <h4>Registered Users</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped bg-white align-middle">
+            <thead class="table-info">
+              <tr>
+                <th>Registration Date Time</th>
+                <th>Name</th>
+                <th>Mobile Number</th>
+                <th>Account Number</th>
+                <th>Current Balance</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="farmersTab" class="admin-tab-content hidden">
+        <h4>Fetched Farmers Data (Sheet1)</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped bg-white align-middle">
+            <thead class="table-success">
+              <tr>
+                <th>Timestamp</th>
+                <th>Farmer Id</th>
+                <th>Enrollment Id</th>
+                <th>Mobile Number</th>
+                <th>Farmer Name</th>
+                <th>Father's Name</th>
+                <th>DOB</th>
+                <th>Gender</th>
+                <th>District</th>
+                <th>Pin Code</th>
+              </tr>
+            </thead>
+            <tbody id="adminFarmersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="adminsTab" class="admin-tab-content hidden">
+        <h4>System Administrators</h4>
+        <div class="table-responsive" style="max-width: 400px;">
+          <table class="table table-bordered table-striped bg-white align-middle">
+            <thead class="table-warning">
+              <tr>
+                <th>Admin ID</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="adminListTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- ADMIN DASHBOARD SECTION -->
-  <div id="adminDashboard" class="card hidden">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h2>Admin Control Panel</h2>
-      <button style="width: auto; padding: 5px 15px; background: #d32f2f;" onclick="logout()">Logout</button>
-    </div>
-    
-    <button onclick="loadAdminData()" style="margin: 15px 0;">Refresh Dashboard Data</button>
+  <script>
+    const CARD_BG_URL = "card_bg.png"; 
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxC4H9FeXE_-OOVNW25cwtu4FgVDgK9B7gWYGn1T4_Sz4ayKFcBXoI8KqIKMvnbk7oV/exec';
 
-    <h3>Pending Wallet Requests</h3>
-    <div id="adminPendingTable" style="overflow-x: auto; margin-bottom: 20px;"></div>
+    let currentUser = null;
+    let currentAdminToken = null;
+    let activeTxType = '';
+    let currentAdminAction = {};
+    let fetchedFarmer = null;
 
-    <h3>Registered Users</h3>
-    <div id="adminUsersTable" style="overflow-x: auto; margin-bottom: 20px;"></div>
-
-    <h3>Farmers Data</h3>
-    <div id="adminFarmersTable" style="overflow-x: auto;"></div>
-  </div>
-
-</div>
-
-<script>
-  // 🔗 APPS SCRIPT WEB APP URL (Apna Web App URL yahan daalein)
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxVt-6eEc68X6lHW5K7z7m7cCRq8CzOKGTEUfw0hl6wr1DyzaxmQp2eexAooVF9dntDMg/exec";
-
-  let currentUser = JSON.parse(localStorage.getItem('user')) || null;
-  let currentAdminToken = localStorage.getItem('adminToken') || null;
-  let currentFetchedFarmer = null;
-
-  window.onload = function() {
-    if(currentUser) {
-      showUserDashboard();
-    } else if(currentAdminToken) {
-      showAdminDashboard();
-    }
-  };
-
-  function switchTab(tab) {
-    document.getElementById('loginForm').classList.add('hidden');
-    document.getElementById('registerForm').classList.add('hidden');
-    document.getElementById('adminForm').classList.add('hidden');
-    
-    if(tab === 'login') document.getElementById('loginForm').classList.remove('hidden');
-    if(tab === 'register') document.getElementById('registerForm').classList.remove('hidden');
-    if(tab === 'admin') document.getElementById('adminForm').classList.remove('hidden');
-  }
-
-  // API Call Wrapper
-  async function apiCall(payload) {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      });
-      return await response.json();
-    } catch(err) {
-      alert("Network Error: " + err.toString());
-      return { success: false };
-    }
-  }
-
-  // 📅 Frontend Helper: Universal DOB Formatter
-  function cleanDobFormat(rawDob) {
-    if(!rawDob || rawDob === "N/A") return "N/A";
-    let str = rawDob.toString().trim();
-    if(str.includes('T') || str.includes('-')) {
-      let d = new Date(str);
-      if(!isNaN(d.getTime())) {
-        let day = String(d.getDate()).padStart(2, '0');
-        let month = String(d.getMonth() + 1).padStart(2, '0');
-        let year = d.getFullYear();
-        return `${day}/${month}/${year}`;
-      }
-    }
-    return str;
-  }
-
-  // User Actions
-  async function handleUserRegister() {
-    const name = document.getElementById('regName').value;
-    const mobile = document.getElementById('regMobile').value;
-    const password = document.getElementById('regPassword').value;
-
-    if(!name || !mobile || !password) return alert("Poori jankari bharein!");
-
-    const res = await apiCall({ action: 'registerUser', data: { name, mobile, password } });
-    alert(res.message);
-    if(res.success) switchTab('login');
-  }
-
-  async function handleUserLogin() {
-    const mobile = document.getElementById('loginMobile').value;
-    const password = document.getElementById('loginPassword').value;
-
-    const res = await apiCall({ action: 'loginUser', data: { mobile, password } });
-    if(res.success) {
-      currentUser = res.user;
-      localStorage.setItem('user', JSON.stringify(currentUser));
-      showUserDashboard();
-    } else {
-      alert(res.message);
-    }
-  }
-
-  function showUserDashboard() {
-    document.getElementById('authSection').classList.add('hidden');
-    document.getElementById('userDashboard').classList.remove('hidden');
-    document.getElementById('welcomeUser').innerText = "Welcome, " + currentUser.name;
-    document.getElementById('userBalance').innerText = currentUser.balance;
-    loadUserHistory();
-  }
-
-  async function refreshBalance() {
-    const res = await apiCall({
-      action: 'refreshBalance',
-      data: { mobile: currentUser.mobile, userToken: currentUser.userToken }
-    });
-    if(res.success) {
-      currentUser.balance = res.balance;
-      localStorage.setItem('user', JSON.stringify(currentUser));
-      document.getElementById('userBalance').innerText = res.balance;
-    }
-  }
-
-  async function fetchFarmerCard() {
-    const farmerId = document.getElementById('searchFarmerId').value.trim();
-    if(!farmerId) return alert("Farmer ID darj karein!");
-
-    const res = await apiCall({
-      action: 'fetchFarmerData',
-      data: { accNo: currentUser.accNo, userToken: currentUser.userToken, farmerId: farmerId }
-    });
-
-    if(res.success) {
-      currentFetchedFarmer = res.farmer;
-      document.getElementById('cFarmerId').innerText = res.farmer.farmerId;
-      document.getElementById('cName').innerText = res.farmer.name;
-      document.getElementById('cFather').innerText = res.farmer.fatherName;
-      document.getElementById('cDob').innerText = cleanDobFormat(res.farmer.dob); // Cleaned Date
-      document.getElementById('cGender').innerText = res.farmer.gender;
-      document.getElementById('cMobile').innerText = res.farmer.mobile;
-      document.getElementById('cDistrict').innerText = res.farmer.district;
+    // 📅 FIX: Universal Direct String Parser (Bina Date() object ke parse karega taaki timezone shift na ho)
+    function parseDobDirectly(rawDob) {
+      if (!rawDob || rawDob === "N/A" || rawDob === "undefined") return "N/A";
+      let str = rawDob.toString().trim();
       
-      const photoImg = document.getElementById('cPhoto');
-      photoImg.src = res.farmer.photoBase64 ? res.farmer.photoBase64 : 'https://via.placeholder.com/100x120?text=No+Photo';
-
-      document.getElementById('cardPreviewArea').classList.remove('hidden');
-    } else {
-      alert(res.message);
-      document.getElementById('cardPreviewArea').classList.add('hidden');
-    }
-  }
-
-  async function deductAndDownloadCard() {
-    if(!currentFetchedFarmer) return;
-    if(confirm("Farmer Card print/download karne ke liye ₹20 katenge. Kya aap aage badhna chahte hain?")) {
-      const res = await apiCall({
-        action: 'deductAndDownload',
-        data: {
-          mobile: currentUser.mobile,
-          accNo: currentUser.accNo,
-          userToken: currentUser.userToken,
-          farmerId: currentFetchedFarmer.farmerId
+      // ISO String Format Check: "1964-01-01T00:00:00.000Z" ya "1964-01-01"
+      if (str.includes('-')) {
+        let cleanStr = str.split('T')[0]; // Extracted: "1964-01-01"
+        let parts = cleanStr.split('-');
+        if (parts.length === 3) {
+          let year = parts[0];
+          let month = parts[1];
+          let day = parts[2];
+          return `${day}/${month}/${year}`;
         }
-      });
+      }
+      return str;
+    }
 
-      if(res.success) {
-        alert("Payment Successful! Card download ho raha hai.");
-        refreshBalance();
-        window.print(); // Browser print/download trigger
-      } else {
+    function initializeCardBackgrounds() {
+      if(!CARD_BG_URL) return;
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = CARD_BG_URL;
+      img.onload = function() {
+        const width = img.naturalWidth;
+        const height = img.naturalHeight;
+        const halfHeight = height / 2;
+
+        const canvasFront = document.createElement('canvas');
+        canvasFront.width = width;
+        canvasFront.height = halfHeight;
+        const ctxFront = canvasFront.getContext('2d');
+        ctxFront.drawImage(img, 0, 0, width, halfHeight, 0, 0, width, halfHeight);
+        document.getElementById('cardFrontSide').style.backgroundImage = `url(${canvasFront.toDataURL('image/png')})`;
+
+        const canvasBack = document.createElement('canvas');
+        canvasBack.width = width;
+        canvasBack.height = halfHeight;
+        const ctxBack = canvasBack.getContext('2d');
+        ctxBack.drawImage(img, 0, halfHeight, width, halfHeight, 0, 0, width, halfHeight);
+        document.getElementById('cardBackSide').style.backgroundImage = `url(${canvasBack.toDataURL('image/png')})`;
+      };
+    }
+
+    window.addEventListener('DOMContentLoaded', initializeCardBackgrounds);
+
+    function showScreen(screenId) {
+      ['authChoice', 'registerScreen', 'loginScreen', 'adminLoginScreen', 'userDashboard', 'adminDashboard'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    function switchAdminTab(tabId, element) {
+      document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.admin-nav .nav-link').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.remove('hidden');
+      element.classList.add('active');
+    }
+
+    function showGuidelines() { document.getElementById('guidelinesModal').classList.remove('hidden'); }
+    function closeGuidelines() { document.getElementById('guidelinesModal').classList.add('hidden'); }
+
+    async function openUserHistory() {
+      if(!currentUser || !currentUser.accNo) return;
+      const modal = document.getElementById('userHistoryModal');
+      modal.classList.remove('hidden');
+      const historyBody = document.getElementById('userHistoryTableBody');
+      historyBody.innerHTML = '<tr><td colspan="8" class="text-center py-3"><span class="loading-spinner"></span> Data load ho raha hai...</td></tr>';
+      
+      let res = await callBackend('getUserHistory', { accNo: currentUser.accNo, userToken: currentUser.userToken }, 'btn-user-history');
+      historyBody.innerHTML = '';
+      if (res && res.success && res.history && res.history.length > 0) {
+        let listData = res.history.slice();
+        if(new Date(listData[0].reqTime) < new Date(listData[listData.length - 1].reqTime)) { listData.reverse(); }
+        listData.forEach(tx => {
+          let badge = tx.status === 'pending' ? '<span class="badge bg-warning text-dark">Pending</span>' : (tx.status === 'successful' ? '<span class="badge bg-success">Successful</span>' : '<span class="badge bg-danger">Failed</span>');
+          historyBody.innerHTML += `
+            <tr>
+              <td class="nowrap"><small><b>Req:</b> ${tx.reqTime}</small><br><small><b>Act:</b> ${tx.actionTime || '-'}</small></td>
+              <td><small class="text-muted text-break">${tx.txId}</small><br><code class="text-danger">${tx.utr}</code></td>
+              <td><strong>${tx.name}</strong><br><small class="text-muted">${tx.mobile}</small></td>
+              <td class="nowrap"><code class="text-danger">${tx.accNo}</code></td>
+              <td class="text-center"><span class="badge bg-secondary">${tx.type ? tx.type.toUpperCase() : ''}</span></td>
+              <td class="fw-bold text-center nowrap">₹${tx.amount}</td>
+              <td class="text-center">${badge}</td>
+              <td><small>${tx.remark || '-'}</small></td>
+            </tr>`;
+        });
+      } else { historyBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Aapka koi transaction record nahi mila.</td></tr>'; }
+    }
+
+    function closeUserHistory() { document.getElementById('userHistoryModal').classList.add('hidden'); }
+
+    function downloadExtension() {
+      const link = document.createElement('a');
+      link.href = "extension.zip";
+      link.download = "Farmer_Data_Fetcher_Extension.zip";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function openPrintCardPanel() {
+      document.getElementById('printCardPanel').classList.toggle('hidden');
+      document.getElementById('farmerPreview').classList.add('hidden');
+    }
+
+    async function searchFarmer() {
+      const fId = document.getElementById('searchFarmerId').value.trim();
+      if(!fId) { alert("Kripya Farmer ID enter karein!"); return; }
+      
+      let res = await callBackend('fetchFarmerData', { farmerId: fId, accNo: currentUser.accNo, userToken: currentUser.userToken }, 'btn-search-farmer');
+      if (res && res.success) {
+        fetchedFarmer = res.farmer;
+        document.getElementById('prevPhoto').src = fetchedFarmer.photoBase64 || "https://via.placeholder.com/100x120?text=No+Photo";
+        document.getElementById('prevName').innerText = fetchedFarmer.name;
+        document.getElementById('prevFather').innerText = fetchedFarmer.fatherName;
+        document.getElementById('prevMobile').innerText = fetchedFarmer.mobile || "N/A";
+        document.getElementById('prevId').innerText = fetchedFarmer.farmerId;
+        document.getElementById('farmerPreview').classList.remove('hidden');
+      } else if (res) {
         alert(res.message);
       }
     }
-  }
 
-  async function submitDeposit() {
-    const amount = document.getElementById('txAmount').value;
-    const utr = document.getElementById('txUtr').value;
+    async function processCardDeduction() {
+      if(!fetchedFarmer) return;
+      let res = await callBackend('deductAndDownload', { mobile: currentUser.mobile, accNo: currentUser.accNo, farmerId: fetchedFarmer.farmerId, userToken: currentUser.userToken }, 'btn-download-agri');
+      if (res && res.success) {
+        currentUser.balance = res.newBalance;
+        document.getElementById('dashBalance').innerText = res.newBalance;
+        alert(res.message);
+        await downloadFarmerCard(fetchedFarmer);
+      } else if (res) { alert(res.message); }
+    }
 
-    if(!amount || !utr) return alert("Amount aur UTR dono likhein!");
-
-    const res = await apiCall({
-      action: 'submitTransaction',
-      data: {
-        mobile: currentUser.mobile,
-        accNo: currentUser.accNo,
-        userToken: currentUser.userToken,
-        name: currentUser.name,
-        amount: amount,
-        utr: utr,
-        type: 'credit'
+    async function downloadFarmerCard(f) {
+      document.getElementById('cardPhoto').src = f.photoBase64;
+      document.getElementById('cardName').innerText = f.name;
+      document.getElementById('cardFather').innerText = f.fatherName;
+    
+      // 📅 FIX: parseDobDirectly se direct format apply hoga (Zero timezone shift)
+      document.getElementById('cardDob').innerText = parseDobDirectly(f.dob);
+      document.getElementById('cardGender').innerText = f.gender;
+      document.getElementById('cardMobile').innerText = f.mobile && f.mobile !== "N/A" ? f.mobile : ""; 
+      document.getElementById('cardFarmerId').innerText = f.farmerId;
+      
+      let fullAddr = f.address || "N/A";
+      if (f.district && f.district !== "N/A" && !fullAddr.toLowerCase().includes(f.district.toLowerCase())) {
+        fullAddr += `, ${f.district}`;
       }
-    });
-
-    alert(res.success ? "Request bhej di gayi hai! Admin verify karega." : res.message);
-    if(res.success) {
-      document.getElementById('txAmount').value = '';
-      document.getElementById('txUtr').value = '';
-      loadUserHistory();
+      if (f.pincode && f.pincode !== "N/A" && !fullAddr.includes(f.pincode.toString())) {
+        fullAddr += ` - ${f.pincode}`;
+      }
+      document.getElementById('cardAddress').innerText = fullAddr;
+    
+      const landContainer = document.getElementById('cardLandContainer');
+      let tableHTML = `
+        <table class="c-land-table">
+          <thead>
+            <tr>
+              <th style="width:22%;">District</th>
+              <th style="width:22%;">Village</th>
+              <th style="width:18%;">SurveyNo</th>
+              <th style="width:18%;">WonerType</th>
+              <th style="width:20%;">FinalHecteyar</th>
+            </tr>
+          </thead>
+          <tbody>`;
+    
+      if (f.landRecords && f.landRecords.length > 0) {
+        f.landRecords.slice(0, 6).forEach(rec => {
+          tableHTML += `<tr><td>${rec.district || ''}</td><td>${rec.village || ''}</td><td>${rec.surveyNo || ''}</td><td>${rec.ownerType || 'N/A'}</td><td>${rec.finalHectare || ''}</td></tr>`;
+        });
+      } else {
+        tableHTML += `<tr><td colspan="5" style="text-align:center;">No land records mapped</td></tr>`;
+      }
+      tableHTML += `</tbody></table>`;
+      landContainer.innerHTML = tableHTML;
+      document.getElementById('cardEnrollId').innerText = f.enrollmentId;
+    
+      const canvasSheet = await html2canvas(document.getElementById('fullCardSheet'), { useCORS: true, scale: 2 });
+      const imgSheetData = canvasSheet.toDataURL('image/png');
+      triggerDownload(imgSheetData, `AgriStack_Full_Card_${f.farmerId}.png`);
     }
-  }
 
-  async function loadUserHistory() {
-    const res = await apiCall({
-      action: 'getUserHistory',
-      data: { accNo: currentUser.accNo, userToken: currentUser.userToken }
-    });
-
-    if(res.success) {
-      let html = `<table><tr><th>Time</th><th>Txn ID</th><th>UTR</th><th>Amt</th><th>Type</th><th>Status</th></tr>`;
-      res.history.forEach(tx => {
-        html += `<tr>
-          <td>${tx.reqTime}</td>
-          <td>${tx.txId}</td>
-          <td>${tx.utr}</td>
-          <td>₹${tx.amount}</td>
-          <td>${tx.type}</td>
-          <td style="color:${tx.status==='successful'?'green':tx.status==='failed'?'red':'orange'}">${tx.status}</td>
-        </tr>`;
-      });
-      html += `</table>`;
-      document.getElementById('historyTableContainer').innerHTML = html;
+    function triggerDownload(dataUrl, filename) {
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
-  }
 
-  // Admin Actions
-  async function handleAdminLogin() {
-    const id = document.getElementById('adminId').value;
-    const password = document.getElementById('adminPassword').value;
-
-    const res = await apiCall({ action: 'loginAdmin', data: { id, password } });
-    if(res.success) {
-      currentAdminToken = res.adminToken;
-      localStorage.setItem('adminToken', currentAdminToken);
-      showAdminDashboard();
-    } else {
-      alert(res.message);
+    async function callBackend(action, data, triggerBtnId = null) {
+      toggleLoading(true, triggerBtnId);
+      try {
+        let response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: action, data: data })
+        });
+        toggleLoading(false, triggerBtnId);
+        return await response.json();
+      } catch (err) {
+        toggleLoading(false, triggerBtnId);
+        alert("Network Error: Connection fail ya Web App URL galat hai!");
+      }
     }
-  }
 
-  function showAdminDashboard() {
-    document.getElementById('authSection').classList.add('hidden');
-    document.getElementById('adminDashboard').classList.remove('hidden');
-    loadAdminData();
-  }
-
-  async function loadAdminData() {
-    const res = await apiCall({
-      action: 'getAdminDashboardData',
-      data: { adminToken: currentAdminToken }
-    });
-
-    if(res.success) {
-      // Pending Transactions Table
-      let pTable = `<table><tr><th>Acc No</th><th>Name</th><th>Amount</th><th>UTR</th><th>Action</th></tr>`;
-      res.pending.forEach(p => {
-        pTable += `<tr>
-          <td>${p.accNo}</td>
-          <td>${p.name}</td>
-          <td>₹${p.amount}</td>
-          <td>${p.utr}</td>
-          <td>
-            <button onclick="processTx('${p.txId}', 'right', '${p.accNo}', ${p.amount})" style="background:green; padding:3px 8px;">Approve</button>
-            <button onclick="processTx('${p.txId}', 'wrong', '${p.accNo}', ${p.amount})" style="background:red; padding:3px 8px;">Reject</button>
-          </td>
-        </tr>`;
-      });
-      pTable += `</table>`;
-      document.getElementById('adminPendingTable').innerHTML = res.pending.length ? pTable : '<p>Koi pending transaction nahi hai.</p>';
-
-      // Users Table
-      let uTable = `<table><tr><th>Reg Date</th><th>Name</th><th>Mobile</th><th>Acc No</th><th>Balance</th></tr>`;
-      res.users.forEach(u => {
-        uTable += `<tr><td>${u.regTime}</td><td>${u.name}</td><td>${u.mobile}</td><td>${u.accNo}</td><td>₹${u.balance}</td></tr>`;
-      });
-      uTable += `</table>`;
-      document.getElementById('adminUsersTable').innerHTML = uTable;
-
-      // Farmers Table
-      let fTable = `<table><tr><th>Farmer ID</th><th>Name</th><th>Father</th><th>DOB</th><th>Mobile</th><th>District</th></tr>`;
-      res.farmers.forEach(f => {
-        fTable += `<tr><td>${f.farmerId}</td><td>${f.farmerName}</td><td>${f.fatherName}</td><td>${cleanDobFormat(f.dob)}</td><td>${f.mobile}</td><td>${f.district}</td></tr>`;
-      });
-      fTable += `</table>`;
-      document.getElementById('adminFarmersTable').innerHTML = fTable;
+    function toggleLoading(isLoading, btnId = null) {
+      const targetBtn = btnId ? document.getElementById(btnId) : document.querySelector('button:focus');
+      if (!targetBtn) return;
+      if (isLoading) {
+        targetBtn.disabled = true;
+        targetBtn.setAttribute('data-original-html', targetBtn.innerHTML);
+        targetBtn.innerHTML = '<span class="loading-spinner"></span>...';
+      } else {
+        document.querySelectorAll('button').forEach(btn => {
+          const savedHtml = btn.getAttribute('data-original-html');
+          if (savedHtml !== null) {
+            btn.innerHTML = savedHtml;
+            btn.removeAttribute('data-original-html');
+            btn.disabled = false;
+          }
+        });
+      }
     }
-  }
 
-  async function processTx(txId, action, accNo, amount) {
-    const remark = prompt("Remark darj karein:", action === 'right' ? 'Approved' : 'Rejected');
-    if(remark === null) return;
+    async function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('regName').value;
+      const mobile = document.getElementById('regMobile').value;
+      const pass = document.getElementById('regPass').value;
+      const confPass = document.getElementById('regConfPass').value;
+      if(mobile.length !== 10) { alert("Mobile number 10 anko ka hona chahiye."); return; }
+      if(pass !== confPass) { alert("Password match nahi ho rahe hain."); return; }
+      let res = await callBackend('registerUser', {name, mobile, password: pass}, 'btn-register');
+      if(res) { alert(res.message); if(res.success) showScreen('loginScreen'); }
+    }
 
-    const res = await apiCall({
-      action: 'processTransaction',
-      data: { adminToken: currentAdminToken, txId, action, remark, accNo, amount }
-    });
+    async function handleUserLogin(e) {
+      e.preventDefault();
+      const mobile = document.getElementById('loginMobile').value;
+      const pass = document.getElementById('loginPass').value;
+      let res = await callBackend('loginUser', {mobile, password: pass}, 'btn-user-login');
+      if(res && res.success) { currentUser = res.user; loadDashboard(); } 
+      else if (res) { alert(res.message); }
+    }
 
-    alert(res.message);
-    loadAdminData();
-  }
+    function loadDashboard() {
+      document.getElementById('dashName').innerText = currentUser.name;
+      document.getElementById('dashMobile').innerText = currentUser.mobile;
+      document.getElementById('dashAcc').innerText = currentUser.accNo;
+      document.getElementById('dashBalance').innerText = currentUser.balance;
+      showScreen('userDashboard');
+    }
 
-  function logout() {
-    localStorage.clear();
-    location.reload();
-  }
-</script>
+    async function triggerRefresh() {
+      let res = await callBackend('refreshBalance', {mobile: currentUser.mobile, userToken: currentUser.userToken}, 'btn-user-refresh');
+      if(res && res.success) {
+        currentUser.balance = res.balance;
+        document.getElementById('dashBalance').innerText = res.balance;
+      }
+    }
+
+    function openTopUp(type) {
+      activeTxType = type;
+      document.getElementById('paymentArea').classList.remove('hidden');
+      document.getElementById('qrContainer').classList.add('hidden');
+      document.getElementById('paymentTitle').innerText = type === 'top-up' ? 'Standard Top-Up' : 'Emergency Top-Up';
+    }
+
+    function generateQR() {
+      const amt = parseFloat(document.getElementById('payAmount').value);
+      if(!amt || amt < 10 || amt > 200) { alert("Kripya ₹10 aur ₹200 ke beech ka amount enter karein!"); return; }
+      const upiId = "6388702934@kotakbank";
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${upiId}&am=${amt}&cu=INR`)}`;
+      document.getElementById('qrcode').innerHTML = `<img src="${qrUrl}">`;
+      document.getElementById('qrContainer').classList.remove('hidden');
+    }
+
+    async function submitTx() {
+      const utr = document.getElementById('payUtr').value.trim();
+      const amount = document.getElementById('payAmount').value;
+      if(!/^\d{12}$/.test(utr)) { alert("Kripya sahi 12-digit ka numeric UTR Number enter karein!"); return; }
+      let res = await callBackend('submitTransaction', {utr, amount, type: activeTxType, accNo: currentUser.accNo, mobile: currentUser.mobile, name: currentUser.name, userToken: currentUser.userToken}, 'btn-submit-payment');
+      if(res) {
+        if (!res.success) { alert(res.message); return; }
+        alert(activeTxType === 'top-up' ? "Apka balance 24 ghante ke andar update ho jayega." : "Apka balance 30 mint me update ho jayega. 6388702934 par WhatsApp par screenshot bhejna zaroori hai.");
+        document.getElementById('payAmount').value = '';
+        document.getElementById('payUtr').value = '';
+        document.getElementById('paymentArea').classList.add('hidden');
+        document.getElementById('qrContainer').classList.add('hidden');
+      }
+    }
+
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const id = document.getElementById('adminId').value;
+      const pass = document.getElementById('adminPass').value;
+      let res = await callBackend('loginAdmin', {id, password: pass}, 'btn-admin-login');
+      if(res && res.success) {
+        currentAdminToken = res.adminToken;
+        loadAdminDashboard();
+      } else if (res) alert(res.message);
+    }
+
+    async function loadAdminDashboard(clickBtnElement = null) {
+      const triggerId = clickBtnElement ? clickBtnElement.id : 'btn-admin-refresh';
+      let res = await callBackend('getAdminDashboardData', { adminToken: currentAdminToken }, triggerId);
+      if(!res || !res.success) {
+        if(res && res.message) alert(res.message);
+        return;
+      }
+
+      const sortLatestFirst = (arr, dateKey) => {
+        if(!arr || !arr.length) return [];
+        return arr.slice().sort((a, b) => new Date(b[dateKey] || 0) - new Date(a[dateKey] || 0));
+      };
+
+      const pendingBody = document.getElementById('adminPendingTableBody');
+      pendingBody.innerHTML = '';
+      const pendingList = sortLatestFirst(res.pending, 'reqTime');
+      if(pendingList.length > 0) {
+        pendingList.forEach(tx => {
+          pendingBody.innerHTML += `
+            <tr id="row-${tx.txId}">
+              <td><small>${tx.reqTime}</small></td>
+              <td><strong>${tx.name}</strong><br><small class="text-muted">${tx.mobile}</small></td>
+              <td><code>${tx.accNo}</code></td>
+              <td><span class="badge ${tx.type === 'top-up' ? 'bg-primary' : 'bg-warning text-dark'}">${tx.type ? tx.type.toUpperCase() : ''}</span></td>
+              <td class="fw-bold text-success">₹${tx.amount}</td>
+              <td><mark>${tx.utr}</mark></td>
+              <td>
+                <button class="btn btn-sm btn-success me-1" onclick="adminAction('${tx.txId}', 'right', '${tx.accNo}', '${tx.amount}')">✓</button>
+                <button class="btn btn-sm btn-danger" onclick="adminAction('${tx.txId}', 'wrong', '${tx.accNo}', '${tx.amount}')">✗</button>
+                <div id="remark-box-${tx.txId}" class="mt-2 hidden">
+                   <input type="text" id="rem-${tx.txId}" class="form-control form-control-sm mb-1" placeholder="Remark">
+                   <button id="btn-decide-${tx.txId}" class="btn btn-primary btn-sm w-100" onclick="submitAdminDecision('${tx.txId}','${tx.accNo}','${tx.amount}')">Submit</button>
+                </div>
+              </td>
+            </tr>`;
+        });
+      } else { pendingBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Koi pending request nahi hai.</td></tr>'; }
+
+      const allTxBody = document.getElementById('adminAllTxTableBody');
+      allTxBody.innerHTML = '';
+      const allTxList = sortLatestFirst(res.allTx, 'reqTime');
+      if(allTxList.length > 0) {
+        allTxList.forEach(tx => {
+          let badge = tx.status === 'pending' ? '<span class="badge bg-warning text-dark">Pending</span>' : (tx.status === 'successful' ? '<span class="badge bg-success">Successful</span>' : '<span class="badge bg-danger">Failed</span>');
+          allTxBody.innerHTML += `
+            <tr>
+              <td><small><b>Req:</b> ${tx.reqTime}<br><b>Act:</b> ${tx.actionTime || '-'}</small></td>
+              <td><small class="text-muted">${tx.txId}</small><br><code>${tx.utr}</code></td>
+              <td><strong>${tx.name}</strong><br><small>${tx.mobile}</small></td>
+              <td><code>${tx.accNo}</code></td>
+              <td><span class="badge bg-secondary">${tx.type ? tx.type.toUpperCase() : ''}</span></td>
+              <td>₹${tx.amount}</td>
+              <td>${badge}</td>
+              <td><small>${tx.remark || '-'}</small></td>
+            </tr>`;
+        });
+      } else { allTxBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Koi records nahi hain.</td></tr>'; }
+
+      const usersBody = document.getElementById('adminUsersTableBody');
+      usersBody.innerHTML = '';
+      const usersList = sortLatestFirst(res.users, 'regTime');
+      if(usersList.length > 0) {
+        usersList.forEach(user => {
+          usersBody.innerHTML += `<tr><td><small>${user.regTime}</small></td><td><strong>${user.name}</strong></td><td>${user.mobile}</td><td><code>${user.accNo}</code></td><td class="fw-bold text-success">₹${user.balance}</td></tr>`;
+        });
+      } else { usersBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Koi users nahi hain.</td></tr>'; }
+
+      const farmersBody = document.getElementById('adminFarmersTableBody');
+      farmersBody.innerHTML = '';
+      const farmersList = sortLatestFirst(res.farmers, 'timestamp');
+      if(farmersList.length > 0) {
+        farmersList.forEach(f => {
+            // 📅 FIX: Admin Table ke liye bhi Direct Parsing
+            let formattedDob = parseDobDirectly(f.dob);
+          
+            farmersBody.innerHTML += `
+              <tr>
+                <td><small>${f.timestamp}</small></td>
+                <td><code>${f.farmerId}</code></td>
+                <td><small>${f.enrollmentId}</small></td>
+                <td>${f.mobile}</td>
+                <td><strong>${f.farmerName}</strong></td>
+                <td>${f.fatherName}</td>
+                <td>${formattedDob}</td>
+                <td>${f.gender}</td>
+                <td>${f.district}</td>
+                <td>${f.pincode}</td>
+              </tr>`;
+          });
+      } else { farmersBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-3">Sheet1 me koi data nahi mila.</td></tr>'; }
+
+      const adminsBody = document.getElementById('adminListTableBody');
+      adminsBody.innerHTML = '';
+      if(res.admins) res.admins.forEach(admin => { adminsBody.innerHTML += `<tr><td><strong>${admin.id}</strong></td><td><span class="badge bg-success">Active</span></td></tr>`; });
+
+      showScreen('adminDashboard');
+    }
+
+    function adminAction(txId, action, accNo, amount) {
+      currentAdminAction = { txId, action, accNo, amount };
+      document.querySelectorAll('[id^="remark-box-"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`remark-box-${txId}`).classList.remove('hidden');
+    }
+
+    async function submitAdminDecision(txId, accNo, amount) {
+      const remark = document.getElementById(`rem-${txId}`).value;
+      if(!remark || remark.trim() === "") { alert("Remark likhna zaroori hai"); return; }
+      let res = await callBackend('processTransaction', {txId, action: currentAdminAction.action, remark, accNo, amount, adminToken: currentAdminToken}, `btn-decide-${txId}`);
+      if(res) { alert(res.message); loadAdminDashboard(); }
+    }
+
+    function logout() { currentUser = null; currentAdminToken = null; showScreen('authChoice'); }
+  </script>
 </body>
 </html>
